@@ -11,10 +11,11 @@
 	si querés que te abra el Excel en vez de sólo generar el archivo y que de paso te apantalle y te haga unos mateykos
 	
 .OUTPUTS
-	Write-Host para las excepciones
+	Write-Host para poner en el prompt que algo está haciendo más que true, true, true; de todas maneras, aún no funciona y LRPM
+	Write-Exception para las excepciones
 	
 .NOTES
-	Version:	1.6
+	Version:	1.65
 	Author:		Santiago Platero
 	Creation Date: 	04/04/2018
 	Purpose/Change:	Commit inicial
@@ -34,19 +35,30 @@ $delimiter = ";"
 
 #----------------------------------------------------------[Declaraciones]----------------------------------------------------------
 
-# Nada por aquí, nada por allá
+# Información del script
+$scriptVersion = "1.65"
+$scriptName = $MyInvocation.MyCommand.Name
 
 #-----------------------------------------------------------[Ejecución]------------------------------------------------------------
+
+# Función para que aparezca un bonito mensaje en caso de error
+Function Write-Exception
+{
+	Write-Host "[$(Get-Date -format $($dateFormat))] ERROR: $($_.Exception.Message)"
+	exit 1
+}
 
 # Control de errores
 try {
 
 	# Creación de objeto COM de M$ Excel
+	Write-Host "[$(Get-Date -format $($dateFormat))] INFO: Creando planilla de Excel"
 	$excel = New-Object -ComObject excel.application 
 	$workbook = $excel.Workbooks.Add(1)
 	$worksheet = $workbook.worksheets.Item(1)
 
 	# Establecemos algunos tamaños específicos para columnas y filas
+	Write-Host "[$(Get-Date -format $($dateFormat))] INFO: Estableciendo cuestiones de formato a la planilla"
 	$worksheet.Rows("1").RowHeight=74
 	$worksheet.Rows("2").RowHeight=22
 	$worksheet.Rows("4:6").RowHeight=28
@@ -65,11 +77,12 @@ try {
 	$worksheet.Columns("A:E").Font.Size = 10
 
 	# Generamos el header del documento, combinamos las celdas para darle el formato que tiene que llevar
+	Write-Host "[$(Get-Date -format $($dateFormat))] INFO: Generando header del documento, combinando celdas, poniendo algunos bordes"
 	$worksheet.Cells.item(1,1) = "Formulario de Perfiles de Usuario de QAD.Net"
 	$worksheet.Cells.item(1,1).Font.Size = 14
 	$mergecells1 = $worksheet.Range("A1:D1")
 	$mergecells1.Select()
-	$mergecells1.MergeCells = $true
+	$mergecells1.MergeCells = $true | Out-Null
 
 	$worksheet.Cells.item(2,1) = "FOGL-IT-MAR-XXXX/01"
 	$mergecells2 = $worksheet.Range("A2:E2")
@@ -117,9 +130,11 @@ try {
 	$mergecells7.MergeCells = $true
 
 	# Agregamos la imagen del logo, guarda que es un dolor de huevos los últimos cuatro parámetros: posición relativa (horizontal, luego vertical) y tamaño
+	Write-Host "[$(Get-Date -format $($dateFormat))] INFO: Agregando imagen del logo de MTV"
 	$img = $worksheet.Shapes.AddPicture($imgPath, $false, $true, 370, 11, 82, 50)
 
 	# Agregamos algunos bordes para presentar un poco más prolija la info, el cuadro de firmantes, etc.
+	Write-Host "[$(Get-Date -format $($dateFormat))] INFO: Mas bordes..."
 	$worksheet.Range("A1:D1").Borders.LineStyle = 1
 	$worksheet.Range("E1").Borders.LineStyle = 1
 	$worksheet.Range("A2:E2").Borders.LineStyle = 1
@@ -134,6 +149,7 @@ try {
 	$worksheet.Range("E6").Borders.LineStyle = 1
 
 	# Armamos la query para planchar el CSV en lo que queda de planilla, el código lo choree de no sé donde, pero funciona
+	Write-Host "[$(Get-Date -format $($dateFormat))] INFO: Armando query para importar los datos desde el CSV y pegarlos en la planilla"
 	$TxtConnector = ("TEXT;" + $csv)
 	# Atento al rango, acá le indicamos en que celda va a planchar la info del CSV, quizá alguna versión futura sea un parámetro, si tengo ganas
 	$Connector = $worksheet.QueryTables.add($TxtConnector,$worksheet.Range("B8")) 
@@ -146,22 +162,24 @@ try {
 	# Cerramos la query
 	$query.Refresh()
 	$query.Delete()
-
+	
+	Write-Host "[$(Get-Date -format $($dateFormat))] INFO: Estableciendo algunos parametros para la impresion (encabezado, pie, etc.)"
 	# El dichoso header tiene que aparecer en todas las páginas que se vayan a imprimir, así que:
 	$excel.ActiveWorkbook.ActiveSheet.PageSetup.PrintTitleRows = '$1:$3'
 
 	# Lo mismo para el pie de página
 	$worksheet.PageSetup.LeftFooter = "PROC-IT-MAR-XXXX"
 	$worksheet.PageSetup.RightFooter = "Pagina &P"
+	
+	# Guardamos el archivo generado con formato XLSX y cerramos el objeto COM
+	Write-Host "[$(Get-Date -format $($dateFormat))] INFO: Planilla creada exitosamente, guardando y cerrando..."
+	$workbook.SaveAs($xlsx,51)
+	$excel.Quit()
+	exit 0
 }
 # Impresión en caso de errores
 catch
 	{
 		Write-Exception
 	}
-
-# Guardamos el archivo generado con formato XLSX y cerramos el objeto COM
-$workbook.SaveAs($xlsx,51)
-$excel.Quit()
-
 # FIN

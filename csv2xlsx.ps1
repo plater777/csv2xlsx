@@ -66,7 +66,9 @@ try {
 	$worksheet.Rows("7").RowHeight=14
 	$worksheet.Columns("A").ColumnWidth=11
 	$worksheet.Columns("B").ColumnWidth=9
-	$worksheet.Columns("C").ColumnWidth=14
+	# NEW: aplicamos a toda la columna C la propiedad reduce hasta ajustar para que no se pase del ancho de página
+	$worksheet.Range("C:C").ShrinkToFit = $true
+		
 	$worksheet.Columns("D").ColumnWidth=33
 	$worksheet.Columns("E").ColumnWidth=16
 	
@@ -131,7 +133,7 @@ try {
 
 	# Agregamos la imagen del logo, guarda que es un dolor de huevos los últimos cuatro parámetros: posición relativa (horizontal, luego vertical) y tamaño
 	Write-Host "[$(Get-Date -format $($dateFormat))] INFO: Agregando imagen del logo de MTV"
-	$img = $worksheet.Shapes.AddPicture($imgPath, $false, $true, 370, 11, 82, 50)
+	$img = $worksheet.Shapes.AddPicture($imgPath, $false, $true, 352, 11, 82, 50)
 
 	# Agregamos algunos bordes para presentar un poco más prolija la info, el cuadro de firmantes, etc.
 	Write-Host "[$(Get-Date -format $($dateFormat))] INFO: Mas bordes..."
@@ -170,6 +172,8 @@ try {
 	# Lo mismo para el pie de página
 	$worksheet.PageSetup.LeftFooter = "PROC-IT-MAR-XXXX"
 	$worksheet.PageSetup.RightFooter = "Pagina &P"
+	
+	$worksheet.Columns("C").ColumnWidth=15
 	
 	# Guardamos el archivo generado con formato XLSX y cerramos el objeto COM
 	Write-Host "[$(Get-Date -format $($dateFormat))] INFO: Planilla creada exitosamente, guardando y cerrando..."

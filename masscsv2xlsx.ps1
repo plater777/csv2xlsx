@@ -14,13 +14,13 @@
 	Write-Exception para las excepciones
 	
 .NOTES
-	Version:	2.00
+	Version:	2.1
 	Author:		Santiago Platero
 	Creation Date: 	04/04/2018
 	Purpose/Change:	Fork del script original para cambiar todos los archivos de un directorio
 	
 .EXAMPLE
-	> ./csv2xlsx.ps1
+	> ./masscsv2xlsx.ps1
 #>
 
 #---------------------------------------------------------[Inicializaciones]--------------------------------------------------------
@@ -34,7 +34,7 @@ $delimiter = ";"
 #----------------------------------------------------------[Declaraciones]----------------------------------------------------------
 
 # Información del script
-$scriptVersion = "1.65"
+$scriptVersion = "2.1"
 $scriptName = $MyInvocation.MyCommand.Name
 
 #-----------------------------------------------------------[Ejecución]------------------------------------------------------------
@@ -68,7 +68,9 @@ try {
 		$worksheet.Rows("7").RowHeight=14
 		$worksheet.Columns("A").ColumnWidth=11
 		$worksheet.Columns("B").ColumnWidth=9
-		$worksheet.Columns("C").ColumnWidth=14
+		# NEW: aplicamos a toda la columna C la propiedad reduce hasta ajustar para que no se pase del ancho de página
+		$worksheet.Range("C:C").ShrinkToFit = $true
+		
 		$worksheet.Columns("D").ColumnWidth=33
 		$worksheet.Columns("E").ColumnWidth=16
 	
@@ -133,7 +135,7 @@ try {
 
 		# Agregamos la imagen del logo
 		Write-Host "[$(Get-Date -format $($dateFormat))] INFO: Agregando imagen del logo de MTV"
-		$img = $worksheet.Shapes.AddPicture($imgPath, $false, $true, 370, 11, 82, 50)
+		$img = $worksheet.Shapes.AddPicture($imgPath, $false, $true, 352, 11, 82, 50)
 
 		# Agregamos algunos bordes para presentar un poco más prolija la info, el cuadro de firmantes, etc.
 		Write-Host "[$(Get-Date -format $($dateFormat))] INFO: Mas bordes..."
@@ -159,7 +161,7 @@ try {
 		$query.TextFileOtherDelimiter = $delimiter
 		$query.TextFileParseType  = 1
 		$query.TextFileColumnDataTypes = ,1 * $worksheet.Cells.Columns.Count
-		$query.AdjustColumnWidth = 1
+		#$query.AdjustColumnWidth = 1
 
 		# Cerramos la query
 		$query.Refresh()
@@ -173,6 +175,8 @@ try {
 		$worksheet.PageSetup.LeftFooter = "PROC-IT-MAR-0209"
 		$worksheet.PageSetup.RightFooter = "Pagina &P"
 	
+		$worksheet.Columns("C").ColumnWidth=15
+		
 		# Guardamos el archivo generado con formato XLSX y cerramos el objeto COM
 		Write-Host "[$(Get-Date -format $($dateFormat))] INFO: Planilla creada exitosamente, guardando y cerrando..."
 		$workbook.SaveAs($xlsx,51)
